@@ -4,9 +4,8 @@ on:
   push:
   pull_request:
   release:
-    types: [published]   
-  workflow_dispatch:      
-
+    types: [published]
+  workflow_dispatch:
 
 jobs:
   run:
@@ -34,17 +33,39 @@ jobs:
       - name: Build JAR
         run: mvn -q -DskipTests package
 
-      - name: Télécharger le dump depuis la dernière release (Option A)
+      - name: Télécharger le dump depuis la dernière release
+        id: get_dump
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -e
           mkdir -p dump
-          gh release download --repo "$GITHUB_REPOSITORY" --pattern "dump_tp1_orig.sql" --dir dump
+          echo "Recherche d'une release publiée…"
+          if gh release list --repo "$GITHUB_REPOSITORY" --limit 1 | grep -qE 'Latest'; then
+            echo "Release trouvée. Téléchargement de l'asset dump_tp1_orig.sql…"
+            gh release download --repo "$GITHUB_REPOSITORY" --pattern "dump_tp1_orig.sql" --dir dump --clobber
+            if [ -f dump/dump_tp1_orig.sql ]; then
+              echo "present=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "present=false" >> "$GITHUB_OUTPUT"
+              echo "Asset 'dump_tp1_orig.sql' absent de la release."
+            fi
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "Aucune release publiée trouvée."
+          fi
 
-      - name: Run harness (full, avec PG) (Option A)
+      - name: Run harness complet (avec Postgres)
+        if: ${{ steps.get_dump.outputs.present == 'true' }}
         run: |
           mkdir -p artifacts
           java -jar target/tp2-harness-1.0.0.jar
+
+      - name: Générer rapport si dump absent
+        if: ${{ steps.get_dump.outputs.present != 'true' }}
+        run: |
+          mkdir -p artifacts
+          echo "CI: aucune release publiée avec 'dump_tp1_orig.sql' -> run complet non lancé." > artifacts/report.txt
 
       - name: Upload report
         uses: actions/upload-artifact@v4
@@ -53,7 +74,7 @@ jobs:
           path: artifacts/report.txt
 
       - name: Upload CSV
-        if: always()
+        if: ${{ steps.get_dump.outputs.present == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: csv
