@@ -94,75 +94,39 @@ java -jar target/tp2-harness-1.0.0.jar --skip-pg
 ## Sorties & livrables
 
 * `data/` : 11 fichiers JSON (**1 document/ligne**)
-* `artifacts/report.txt` : rapport clair (généré **après `create-indexes.js`**), ex. :
-
-  ```
-  URI Compass: mongodb://127.0.0.1:32825/tp2_ind500?directConnection=true
-
-  Counts (brutes) — après IMPORT:
-  orders                         : 99 432
-  customers                      : 99 437
-  …
-
-  Counts (modélisées):
-  tp2_orders                     : 99 432
-  tp2_products                   : 32 328
-  tp2_sellers_geo                : 3 095
-  tp2_leads                      : 8 000
-
-  Indexes:
-  tp2_orders:
-    - _id_
-    - order_purchase_timestamp_1
-    - review.review_comment_message_text
-    …
-
-  tp2_sellers_geo:
-    - _id_
-    - geo.location_2dsphere
-  ```
-* `artifacts/csv/*.csv` : **exports CSV des résultats de requêtes**.
-  Le harness **scanne la base** et exporte toute collection dont le nom commence par `__res_` ou `__csv_`.
-  Le fichier CSV est nommé **sans le préfixe** (ex. `__res_q1_b_clients_reels` → `q1_b_clients_reels.csv`).
+* `artifacts/report.txt` : rapport clair (généré **après `create-indexes.js`**)
+* `artifacts/csv/*.csv` : **exports CSV des résultats de requêtes**
 
 ### Affichage console (scripts de requêtes)
 
 Pour toute requête qui renvoie **> 50 lignes** :
 
-* les **50 premières** lignes sont affichées,
-* **lignes 51 à 53** : `…` (pointillés),
-* **ligne 54** : **“(N lignes au total)”**.
-
-Cela rend la console lisible tout en conservant l’**export CSV complet** en parallèle.
+* 50 premières lignes affichées
+* ligne 51–53 : `...`
+* ligne 54 : nombre total de lignes
 
 ## Scripts étudiants attendus
 
 Placer dans `scripts/` :
 
-* `build-modeled.js` (pipelines `$lookup`, `$set`, `$merge` ; **avec** `use('tp2_ind500');`)
-* `normalize.js` (création des champs normalisés)
-* `create-indexes.js` (index date, texte, 2dsphere, etc.)
-* `all-queries.js` (Q1–Q5 groupes A & B)
-* `advanced-queries.js` (`$near`, `$text`, `$bucket`, `$facet`)
+* `build-modeled.js`
+* `normalize.js`
+* `create-indexes.js`
+* `all-queries.js`
+* `advanced-queries.js`
 
-> Les scripts fournis créent, pour l’export, des **collections techniques** de résultats préfixées `__res_*` (ou `__csv_*`).
-> **Aucune commande `mongoexport` n’est nécessaire** côté scripts : le harness exporte automatiquement vers `artifacts/csv/`.
+> Les collections de résultats doivent être nommées `__res_*` ou `__csv_*`.
 
 ## Dépannage (FAQ)
 
-* **`Dump introuvable`** : place `dump_tp1_orig.sql` dans `dump/`.
-* **Docker non lancé** : démarre Docker Desktop/Engine.
-* **Compass “ECONNREFUSED”** : relance **avec** `--hold` et utilise **l’URI affichée**.
-* **Counts brutes = 0** : inspecte `data/` (fichiers vides/manquants). Refaire un run **sans** `--skip-pg`.
-* **Counts modélisées = 0** : problème dans `build-modeled.js` (`$merge.on`, champ manquant, etc.).
-* **Pas de CSV générés** : vérifier que les scripts créent bien des collections de résultats **nommées `__res_*` ou `__csv_*`**.
+* **`Dump introuvable`** : placer `dump_tp1_orig.sql` dans `dump/`
+* **Docker non lancé** : démarrer Docker Desktop
+* **Pas de CSV générés** : vérifier les noms des collections (`__res_*` / `__csv_*`)
 
 ## Personnalisation
 
-* **Mapping tables** : modifier `TABLES` dans `Harness.java`.
-* **Sauter Postgres** : `--skip-pg` pour réutiliser `data/`.
-* **HOLD** : `--hold` pour garder Mongo en ligne.
-* **Nom des exports CSV** : basé sur le nom des **collections de résultats** après suppression du préfixe.
+* **Mapping tables** : éditer `TABLES` dans `Harness.java`
+* **Nom des exports CSV** : basé sur le nom de la collection après suppression du préfixe
 
 ## .gitignore (suggestion)
 
@@ -174,8 +138,49 @@ Placer dans `scripts/` :
 /.vscode/
 ```
 
-## Licence / Auteurs
+---
 
-Projet pédagogique – harness de correction TP2 (Testcontainers Java).
-Java 17+, Docker requis.
-Contact : chargé de TP / enseignant responsable.
+# Utilisation via Image Docker
+
+Une image Docker publique est disponible :
+
+```
+ghcr.io/tkouadio/tp2-harness:latest
+```
+
+## Lancer un run complet (avec dump et scripts de l’image)
+
+```bash
+docker run --rm \
+  -v //var/run/docker.sock:/var/run/docker.sock \
+  -e TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock \
+  -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
+  --add-host=host.docker.internal:host-gateway \
+  ghcr.io/tkouadio/tp2-harness:latest
+```
+
+## Lancer en remplaçant les scripts par ceux d’un étudiant
+
+```bash
+docker run --rm \
+  -v //var/run/docker.sock:/var/run/docker.sock \
+  -e TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock \
+  -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
+  --add-host=host.docker.internal:host-gateway \
+  -v "$PWD/scripts:/app/scripts" \
+  -v "$PWD/dump:/app/dump" \
+  -v "$PWD/artifacts:/app/artifacts" \
+  ghcr.io/tkouadio/tp2-harness:latest
+```
+
+## Lancer en mode rapide (JSON déjà exportés)
+
+```bash
+docker run --rm \
+  -v //var/run/docker.sock:/var/run/docker.sock \
+  -e SKIP_PG=1 \
+  -v "$PWD/scripts:/app/scripts" \
+  -v "$PWD/data:/app/data" \
+  -v "$PWD/artifacts:/app/artifacts" \
+  ghcr.io/tkouadio/tp2-harness:latest
+```
