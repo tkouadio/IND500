@@ -16,7 +16,6 @@ import java.util.Map;
 
 public class Harness {
 
-  // Tables PG (préfixées) -> collections Mongo (noms "nus")
   record MapTable(String pg, String mongo) {}
   static final List<MapTable> TABLES = List.of(
       new MapTable("tp1_ind500_orders", "orders"),
@@ -32,7 +31,7 @@ public class Harness {
       new MapTable("tp1_ind500_leads_closed", "leads_closed")
   );
 
-  // Dossiers hôte
+  
   static final Path ROOT        = Path.of("").toAbsolutePath();
   static final Path DUMP_FILE   = ROOT.resolve("dump/dump_tp1_orig.sql");
   static final Path DATA_DIR    = ROOT.resolve("data");
@@ -40,7 +39,7 @@ public class Harness {
   static final Path ARTIFACTS   = ROOT.resolve("artifacts");
   static final Path ARTIFACTS_CSV = ARTIFACTS.resolve("csv");
 
-  // Flags (env ou args) : --hold / --skip-pg
+ 
   static final Map<String,String> ENV = System.getenv();
   static boolean HOLD    = "1".equals(ENV.getOrDefault("HOLD", "0"));
   static boolean SKIP_PG = "1".equals(ENV.getOrDefault("SKIP_PG", "0"));
@@ -52,11 +51,14 @@ public class Harness {
     }
     Files.createDirectories(ARTIFACTS);
     Files.createDirectories(ARTIFACTS_CSV);
+
     if (!SKIP_PG) {
-      if (Files.exists(DATA_DIR)) deleteRecursive(DATA_DIR);
+      
       Files.createDirectories(DATA_DIR);
+      cleanDirectory(DATA_DIR);
     } else {
       Files.createDirectories(DATA_DIR);
+      log("SKIP_PG=1 : on réutilise ./data (pas de Postgres).");
     }
 
     // 1) Postgres: restore + export JSON
@@ -69,11 +71,9 @@ public class Harness {
         pg.start();
         restoreAndExport(pg);
       }
-    } else {
-      log("SKIP_PG=1 : on réutilise ./data (pas de Postgres).");
     }
 
-    // 2) Mongo: import + scripts + rapport (entre phases) + export CSV + HOLD optionnel
+    // 2) Mongo: import + scripts + rapport + export CSV + HOLD optionnel
     MongoDBContainer mongo = new MongoDBContainer(DockerImageName.parse("mongo:6.0"));
     try {
       mongo.start();
@@ -95,10 +95,10 @@ public class Harness {
     if (!Files.exists(DUMP_FILE)) {
       throw new IllegalStateException("Dump introuvable: " + DUMP_FILE.toAbsolutePath());
     }
-    // pousser le dump
+    
     pg.copyFileToContainer(MountableFile.forHostPath(DUMP_FILE), "/tmp/dump.sql");
 
-    // restaurer
+    
     String restore = """
         set -e
         export PGPASSWORD='%s'
@@ -110,7 +110,7 @@ public class Harness {
                       pg.getUsername(), pg.getDatabaseName());
     must(pg.execInContainer("bash","-lc", restore), "Restauration");
 
-    // exporter
+    
     must(pg.execInContainer("bash","-lc","rm -rf /tmp/exports && mkdir -p /tmp/exports"), "prep exports");
     for (MapTable t : TABLES) {
       String copy = """
@@ -120,7 +120,7 @@ public class Harness {
       must(pg.execInContainer("bash","-lc", copy), "export " + t.pg());
     }
 
-    // rapatrier les JSON
+   
     for (MapTable t : TABLES) {
       Path dest = DATA_DIR.resolve(t.mongo() + ".json");
       copyFromContainer(pg, "/tmp/exports/" + t.mongo() + ".json", dest);
@@ -128,7 +128,6 @@ public class Harness {
     log("Exports JSON écrits dans ./data");
   }
 
-  // ----- Exécuter une liste de scripts mongosh -----
   static void runScripts(MongoDBContainer mongo, String[] scripts) throws Exception {
     for (String s : scripts) {
       Path local = SCRIPTS_DIR.resolve(s);
@@ -149,7 +148,7 @@ public class Harness {
   }
 
   static void importIntoMongoAndRunScripts(MongoDBContainer mongo) throws Exception {
-    // pousser JSON et scripts
+    
     must(mongo.execInContainer("bash","-lc","mkdir -p /imports /scripts /csv"), "prep mongo dirs");
 
     // --- Import des collections sources ---
@@ -190,7 +189,6 @@ public class Harness {
   static void exportCsvCollections(MongoDBContainer mongo) throws Exception {
     Files.createDirectories(ARTIFACTS_CSV);
 
-    // Récupérer la liste des collections "__csv_*"
     String list = evalMongo(mongo, """
       (function(){
         return db.getCollectionInfos({ name: /^__csv_/ })
@@ -219,8 +217,8 @@ public class Harness {
           return Object.keys(d).filter(k => k !== "_id").join(",");
         })()
       """.formatted(coll));
-      // fallback si pas de doc : on exporte quand même (fichier vide)
-      String base = coll.replaceAll("^__csv_",""); // nom plus compact côté host
+      
+      String base = coll.replaceAll("^__csv_",""); 
       String containerOut = "/csv/" + base + ".csv";
       String hostOut = ARTIFACTS_CSV.resolve(base + ".csv").toString();
 
@@ -231,14 +229,14 @@ public class Harness {
             --collection "%s" --type=csv --fields "%s" --out "%s"
         """.formatted(coll, fields.replace("\"","\\\""), containerOut);
       } else {
-        // pas de champs -> on tente un export "vide" (créera un fichier sans lignes)
+        
         cmd = """
           bash -lc 'true > "%s"'
         """.formatted(containerOut);
       }
       must(mongo.execInContainer("bash","-lc", cmd), "mongoexport " + coll);
 
-      // rapatrier le fichier CSV
+      
       copyFromContainer(mongo, containerOut, Path.of(hostOut));
       log("   - " + coll + " -> artifacts/csv/" + base + ".csv");
     }
@@ -283,7 +281,7 @@ public class Harness {
       })()
     """);
 
-    // Listes d’index jolies (4 collections)
+    
     String idxOrdersFmt   = evalMongo(mongo, "db.tp2_orders.getIndexes().map(i => '  - ' + i.name).join('\\n')");
     String idxProductsFmt = evalMongo(mongo, "db.tp2_products.getIndexes().map(i => '  - ' + i.name).join('\\n')");
     String idxSellersFmt  = evalMongo(mongo, "db.tp2_sellers_geo.getIndexes().map(i => '  - ' + i.name).join('\\n')");
@@ -332,13 +330,13 @@ public class Harness {
     return s.replaceAll("(?m)^docker(?:-rs)? \\[[^\\]]+\\] .*?(\\r?\\n|$)", "");
   }
 
-  // Nouvelle façon de rapatrier un fichier : InputStream -> fichier local
+  
   static void copyFromContainer(ContainerState c, String srcInContainer, Path destOnHost)
       throws IOException, InterruptedException {
     Files.createDirectories(destOnHost.getParent());
     c.copyFileFromContainer(srcInContainer, is -> {
       Files.copy(is, destOnHost, StandardCopyOption.REPLACE_EXISTING);
-      return null; // ThrowingFunction<T> doit retourner quelque chose
+      return null; 
     });
   }
 
@@ -354,6 +352,20 @@ public class Harness {
     }
   }
 
+  
+  static void cleanDirectory(Path dir) throws IOException {
+    if (!Files.exists(dir)) return;
+    try (var s = Files.walk(dir)) {
+      s.sorted((a, b) -> b.getNameCount() - a.getNameCount()) 
+       .filter(p -> !p.equals(dir))                            
+       .forEach(path -> {
+         try { Files.deleteIfExists(path); }
+         catch (IOException e) { throw new RuntimeException(e); }
+       });
+    }
+  }
+
+ 
   static void deleteRecursive(Path p) throws IOException {
     if (!Files.exists(p)) return;
     try (var s = Files.walk(p)) {
@@ -363,12 +375,12 @@ public class Harness {
   }
 
   static String pretty(String jsonOneLine) {
-    // sans dépendance JSON: on laisse "plat"
+    
     return jsonOneLine;
   }
 
   static void log(String m){
     System.out.println(m);
-    System.out.flush(); // pour voir les étapes immédiatement
+    System.out.flush(); 
   }
 }
