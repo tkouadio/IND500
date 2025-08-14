@@ -1,0 +1,68 @@
+name: TP2 Harness CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+    
+      - name: Cache Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-${{ runner.os }}-
+
+      - name: Build JAR
+        run: mvn -q -DskipTests package
+
+      # ----- Choisis l’un des 2 RUNS ci-dessous -----
+
+      # A) Run complet AVEC Postgres (nécessite dump en Release asset)
+      - name: (Option A) Télécharger le dump depuis la dernière release
+        if: ${{ always() && false }}   
+        env: { GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} }
+        run: |
+          mkdir -p dump
+          gh release download --repo $GITHUB_REPOSITORY --pattern "dump_tp1_orig.sql" --dir dump
+
+      - name: (Option A) Run harness (full, avec PG)
+        if: ${{ always() && false }}  
+        run: |
+          mkdir -p artifacts
+          java -jar target/tp2-harness-1.0.0.jar
+
+      # B) Run rapide SANS Postgres (réutilise data/ si commité)
+      - name: (Option B) Run harness (skip PG, rapide)
+        env:
+          SKIP_PG: "1"
+          HOLD: "0"
+        run: |
+          mkdir -p artifacts
+          java -jar target/tp2-harness-1.0.0.jar
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: report
+          path: artifacts/report.txt
+
+      - name: Upload CSV
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: csv
+          path: artifacts/csv/**
