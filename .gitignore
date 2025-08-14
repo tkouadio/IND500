@@ -1,0 +1,46 @@
+﻿# --- Maven build ---
+/target/
+/dependency-reduced-pom.xml
+
+# --- Artifacts et données générées par le harness ---
+/data/
+/artifacts/
+/target/
+/dump/*.sql
+/tmp/
+/logs/
+/*.log
+
+# --- IDEs & outils ---
+/.idea/
+/*.iml
+/.vscode/
+/.project
+/.classpath
+/.settings/
+
+# --- OS / fichiers divers ---
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+.BIN/
+
+# --- Java runtime dumps ---
+hs_err_pid*
+replay_pid*
+*.hprof
+
+# --- Testcontainers / Docker ---
+**/.testcontainers*
+.testcontainers.properties
+
+# --- Archives temporaires ---
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.gz
+
+# --- (Optionnel) traces Node si un dossier JS cohabite ---
+/node_modules/
