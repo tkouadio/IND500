@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write  
+      packages: write
 
     steps:
       - name: Checkout
@@ -18,11 +18,21 @@ jobs:
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Compute lowercase owner and repo
+      - name: Lowercase owner/repo
         run: |
           echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
-          echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
           echo "REF_NAME=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+
+      - name: Download dump from this release (if present)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          mkdir -p dump
+          # télécharge uniquement si l'asset existe
+          gh release view "$GITHUB_REF_NAME" --json assets -q '.assets[].name' | grep -Fx 'dump_tp1_orig.sql' && \
+            gh release download "$GITHUB_REF_NAME" --pattern "dump_tp1_orig.sql" --dir dump --clobber || \
+            echo "No dump asset found on this release, image will be built without dump."
 
       - name: Login GHCR
         uses: docker/login-action@v3
@@ -31,7 +41,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-    
       - name: Build & Push
         uses: docker/build-push-action@v5
         with:
@@ -41,4 +50,3 @@ jobs:
           tags: |
             ghcr.io/${{ env.OWNER_LC }}/tp2-harness:${{ env.REF_NAME }}
             ghcr.io/${{ env.OWNER_LC }}/tp2-harness:latest
-         

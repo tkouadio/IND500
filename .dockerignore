@@ -1,0 +1,29 @@
+# Ignorer les dossiers de build/maven
+target/
+out/
+*.iml
+
+# Ignorer artefacts temporaires
+artifacts/
+tmp/
+temp/
+logs/
+
+# Ignorer fichiers et dossiers Git
+.git/
+.gitignore
+
+# Ignorer fichiers d'IDE
+.vscode/
+.idea/
+
+# Ignorer fichiers de doc et de config locaux
+README.md
+*.md
+Dockerfile.test
+docker-compose*.yml
+
+# Ignorer les données de test locales
+data/
+tests/
+EOF
