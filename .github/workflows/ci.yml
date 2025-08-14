@@ -1,4 +1,4 @@
-name: TP2 Harness CI
+name: TP2 Harness CI 
 
 on:
   push:
