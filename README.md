@@ -115,7 +115,7 @@ Placer dans `scripts/` :
 * `all-queries.js`
 * `advanced-queries.js`
 
-> Les collections de résultats doivent être nommées `__res_*` ou `__csv_*`.
+> Les collections de résultats sont nommées `__res_*` ou `__csv_*`.
 
 ## Dépannage (FAQ)
 
@@ -128,17 +128,6 @@ Placer dans `scripts/` :
 * **Mapping tables** : éditer `TABLES` dans `Harness.java`
 * **Nom des exports CSV** : basé sur le nom de la collection après suppression du préfixe
 
-## .gitignore (suggestion)
-
-```
-/data/
-/artifacts/
-/target/
-/.idea/
-/.vscode/
-```
-
----
 
 # Utilisation via Image Docker
 
