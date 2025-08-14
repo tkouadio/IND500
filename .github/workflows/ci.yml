@@ -33,7 +33,7 @@ jobs:
       - name: Build JAR
         run: mvn -q -DskipTests package
 
-      - name: Télécharger le dump depuis la dernière release
+      - name: Télécharger le dump depuis la dernière release 
         id: get_dump
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
