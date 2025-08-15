@@ -203,7 +203,7 @@ docker run --rm ^
 > - Le dossier `data/` recevra les **JSON exportés** par le Testcontainer.  
 > - Le dossier `artifacts/` recevra **le rapport et les CSV résultats générés**.
 
-> - **NB:** L'étudiant doit également respecter le contrat de correction fournit.
+> **NB:** L'étudiant doit également respecter le contrat de correction fournit.
 
 ### Linux / macOS (bash)
 
