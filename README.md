@@ -195,6 +195,14 @@ docker run --rm ^
 
 ## Lancer en **remplaçant les scripts** par ceux d’un étudiant
 
+>   **Important avant de lancer :**
+> 
+> - Le dossier `scripts/` doit contenir les fichiers `.js` de l’étudiant.  
+> - Le dossier `dump/` doit contenir le dump PostgreSQL fourni.  
+> - Le dossier `data/` recevra les **JSON exportés** par le Testcontainer.  
+> - Le dossier `artifacts/` recevra les **rapports générés**.
+
+
 ### Linux / macOS (bash)
 
 ```bash
