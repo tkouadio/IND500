@@ -23,9 +23,10 @@ Harness Java pour corriger le TP2 **PostgreSQL → MongoDB** :
 ## Arborescence
 
 ```
+
 tp2-harness-java/
 ├─ dump/
-│  └─ dump_tp1_orig.sql
+│  └─ dump\_tp1\_orig.sql
 ├─ scripts/
 │  ├─ build-modeled.js
 │  ├─ normalize.js
@@ -36,13 +37,14 @@ tp2-harness-java/
 ├─ artifacts/
 │  ├─ report.txt                   # Rapport lisible (après phase 1)
 │  └─ csv/                         # CSV exportés automatiquement (après phase 2)
-│     ├─ q1_a_commandes_par_etat.csv
-│     ├─ q4_b_repartition_vendeurs.csv
+│     ├─ q1\_a\_commandes\_par\_etat.csv
+│     ├─ q4\_b\_repartition\_vendeurs.csv
 │     └─ ...
 ├─ src/main/java/com/tp2/Harness.java
 ├─ pom.xml
 └─ README.md
-```
+
+````
 
 > Le mapping **tables PG → collections Mongo** est déclaré dans `Harness.java` (`TABLES`).
 > Les tables **préfixées** `tp1_ind500_*` sont exportées en JSON **sans préfixe** (ex. `orders.json`) et importées telles quelles (`orders`, `customers`, …).
@@ -51,7 +53,7 @@ tp2-harness-java/
 
 ```bash
 mvn -q -DskipTests package
-```
+````
 
 ## Utilisation
 
@@ -119,7 +121,7 @@ Placer dans `scripts/` :
 
 ## Dépannage (FAQ)
 
-* **`Dump introuvable`** : placer `dump_tp1_orig.sql` dans `dump/`
+* **`Dump introuvable`** : placer `dump_tp1_orig.sql` dans `dump/` ou utiliser l’image `v0.1.2` qui embarque le dump.
 * **Docker non lancé** : démarrer Docker Desktop
 * **Pas de CSV générés** : vérifier les noms des collections (`__res_*` / `__csv_*`)
 
@@ -128,48 +130,181 @@ Placer dans `scripts/` :
 * **Mapping tables** : éditer `TABLES` dans `Harness.java`
 * **Nom des exports CSV** : basé sur le nom de la collection après suppression du préfixe
 
-
 # Utilisation via Image Docker
 
 Une image Docker publique est disponible :
 
 ```
-ghcr.io/tkouadio/tp2-harness:latest
+ghcr.io/tkouadio/tp2-harness
 ```
 
-## Lancer un run complet (avec dump et scripts de l’image)
+**Choisissez votre OS** : les commandes diffèrent légèrement entre bash, PowerShell et cmd.
+
+## Prérequis : récupérer la dernière image
 
 ```bash
+docker pull ghcr.io/tkouadio/tp2-harness:latest
+```
+
+---
+
+## 1. Lancer un run complet (dump + scripts **dans l’image**)
+
+### Linux / macOS (bash)
+
+```bash
+mkdir -p data artifacts
 docker run --rm \
-  -v //var/run/docker.sock:/var/run/docker.sock \
+  -v /var/run/docker.sock:/var/run/docker.sock \
   -e TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock \
   -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
   --add-host=host.docker.internal:host-gateway \
+  -e SKIP_DELETE_DATA=1 -e HOLD=0 \
+  -v "$PWD/data:/app/data" \
+  -v "$PWD/artifacts:/app/artifacts" \
   ghcr.io/tkouadio/tp2-harness:latest
 ```
 
-## Lancer en remplaçant les scripts par ceux d’un étudiant
+### Windows – PowerShell
+
+```powershell
+mkdir data,artifacts -ea 0
+docker run --rm `
+  -v //var/run/docker.sock:/var/run/docker.sock `
+  -e TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock `
+  -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal `
+  --add-host=host.docker.internal:host-gateway `
+  -e SKIP_DELETE_DATA=1 -e HOLD=0 `
+  -v "${PWD}/data:/app/data" `
+  -v "${PWD}/artifacts:/app/artifacts" `
+  ghcr.io/tkouadio/tp2-harness:latest
+```
+
+### Windows – cmd.exe
+
+```cmd
+mkdir data artifacts
+docker run --rm ^
+  -v //var/run/docker.sock:/var/run/docker.sock ^
+  -e TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock ^
+  -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal ^
+  --add-host=host.docker.internal:host-gateway ^
+  -e SKIP_DELETE_DATA=1 -e HOLD=0 ^
+  -v "%cd%\data:/app/data" ^
+  -v "%cd%\artifacts:/app/artifacts" ^
+  ghcr.io/tkouadio/tp2-harness:latest
+```
+
+---
+
+## 2. Lancer en **remplaçant les scripts** par ceux d’un étudiant
+
+### Linux / macOS (bash)
 
 ```bash
+mkdir -p data artifacts
 docker run --rm \
-  -v //var/run/docker.sock:/var/run/docker.sock \
+  -v /var/run/docker.sock:/var/run/docker.sock \
   -e TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock \
   -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
   --add-host=host.docker.internal:host-gateway \
   -v "$PWD/scripts:/app/scripts" \
   -v "$PWD/dump:/app/dump" \
+  -v "$PWD/data:/app/data" \
   -v "$PWD/artifacts:/app/artifacts" \
   ghcr.io/tkouadio/tp2-harness:latest
 ```
 
-## Lancer en mode rapide (JSON déjà exportés)
+### Windows – PowerShell
+
+```powershell
+mkdir data,artifacts -ea 0
+docker run --rm `
+  -v //var/run/docker.sock:/var/run/docker.sock `
+  -e TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock `
+  -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal `
+  --add-host=host.docker.internal:host-gateway `
+  -v "${PWD}/scripts:/app/scripts" `
+  -v "${PWD}/dump:/app/dump" `
+  -v "${PWD}/data:/app/data" `
+  -v "${PWD}/artifacts:/app/artifacts" `
+  ghcr.io/tkouadio/tp2-harness:latest
+```
+
+### Windows – cmd.exe
+
+```cmd
+mkdir data artifacts
+docker run --rm ^
+  -v //var/run/docker.sock:/var/run/docker.sock ^
+  -e TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock ^
+  -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal ^
+  --add-host=host.docker.internal:host-gateway ^
+  -v "%cd%\scripts:/app/scripts" ^
+  -v "%cd%\dump:/app/dump" ^
+  -v "%cd%\data:/app/data" ^
+  -v "%cd%\artifacts:/app/artifacts" ^
+  ghcr.io/tkouadio/tp2-harness:latest
+```
+
+---
+
+## 3. Lancer en **mode rapide** (JSON déjà exportés)
+
+### Linux / macOS (bash)
 
 ```bash
+mkdir -p data artifacts
 docker run --rm \
-  -v //var/run/docker.sock:/var/run/docker.sock \
-  -e SKIP_PG=1 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -e TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock \
+  -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
+  --add-host=host.docker.internal:host-gateway \
+  -e SKIP_PG=1 -e HOLD=0 \
   -v "$PWD/scripts:/app/scripts" \
   -v "$PWD/data:/app/data" \
   -v "$PWD/artifacts:/app/artifacts" \
   ghcr.io/tkouadio/tp2-harness:latest
+```
+
+### Windows – PowerShell
+
+```powershell
+mkdir data,artifacts -ea 0
+docker run --rm `
+  -v //var/run/docker.sock:/var/run/docker.sock `
+  -e TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock `
+  -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal `
+  --add-host=host.docker.internal:host-gateway `
+  -e SKIP_PG=1 -e HOLD=0 `
+  -v "${PWD}/scripts:/app/scripts" `
+  -v "${PWD}/data:/app/data" `
+  -v "${PWD}/artifacts:/app/artifacts" `
+  ghcr.io/tkouadio/tp2-harness:latest
+```
+
+### Windows – cmd.exe
+
+```cmd
+mkdir data artifacts
+docker run --rm ^
+  -v //var/run/docker.sock:/var/run/docker.sock ^
+  -e TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock ^
+  -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal ^
+  --add-host=host.docker.internal:host-gateway ^
+  -e SKIP_PG=1 -e HOLD=0 ^
+  -v "%cd%\scripts:/app/scripts" ^
+  -v "%cd%\data:/app/data" ^
+  -v "%cd%\artifacts:/app/artifacts" ^
+  ghcr.io/tkouadio/tp2-harness:latest
+```
+
+---
+
+## Dépannage rapide
+
+* **Docker Desktop** doit être lancé.
+* Si `Dump introuvable`, utiliser `v0.1.2` (dump embarqué) ou monter `dump/` avec `dump_tp1_orig.sql`.
+* Sous **cmd.exe**, retour à la ligne avec `^` ; sous **PowerShell** avec la backtick `` ` `` ; sous **bash** avec `\`.
+
 ```
