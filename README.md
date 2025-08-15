@@ -200,7 +200,7 @@ docker run --rm ^
 > - Le dossier `scripts/` doit contenir les fichiers `.js` de l’étudiant.  
 > - Le dossier `dump/` doit contenir le dump PostgreSQL fourni.  
 > - Le dossier `data/` recevra les **JSON exportés** par le Testcontainer.  
-> - Le dossier `artifacts/` recevra les **rapports générés**.
+> - Le dossier `artifacts/` recevra **le rapport et les CSV résultats générés**.
 
 
 ### Linux / macOS (bash)
