@@ -147,7 +147,7 @@ docker pull ghcr.io/tkouadio/tp2-harness:latest
 ```
 
 ## Option 1: Lancer un run complet (dump + scripts **dans l’image**)
-> - NB: Les fichiers CSV générés sont les résultats attendus du TP et servent de base pour la correction.
+> - NB: Le rapport et les fichiers CSV générés(./artifacts) sont les résultats attendus du TP et servent de base pour la correction.
 
 ### Linux / macOS (bash)
 
