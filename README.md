@@ -146,9 +146,7 @@ ghcr.io/tkouadio/tp2-harness
 docker pull ghcr.io/tkouadio/tp2-harness:latest
 ```
 
----
-
-## 1. Lancer un run complet (dump + scripts **dans l’image**)
+## Lancer un run complet (dump + scripts **dans l’image**)
 
 ### Linux / macOS (bash)
 
@@ -195,9 +193,7 @@ docker run --rm ^
   ghcr.io/tkouadio/tp2-harness:latest
 ```
 
----
-
-## 2. Lancer en **remplaçant les scripts** par ceux d’un étudiant
+## Lancer en **remplaçant les scripts** par ceux d’un étudiant
 
 ### Linux / macOS (bash)
 
@@ -247,9 +243,7 @@ docker run --rm ^
   ghcr.io/tkouadio/tp2-harness:latest
 ```
 
----
-
-## 3. Lancer en **mode rapide** (JSON déjà exportés)
+## Lancer en **mode rapide** (JSON déjà exportés)
 
 ### Linux / macOS (bash)
 
@@ -298,8 +292,6 @@ docker run --rm ^
   -v "%cd%\artifacts:/app/artifacts" ^
   ghcr.io/tkouadio/tp2-harness:latest
 ```
-
----
 
 ## Dépannage rapide
 
