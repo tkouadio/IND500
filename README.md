@@ -193,7 +193,7 @@ docker run --rm ^
   ghcr.io/tkouadio/tp2-harness:latest
 ```
 
-##Option 2: Lancer en **remplaçant les scripts** par ceux d’un étudiant
+## Option 2: Lancer en **remplaçant les scripts** par ceux d’un étudiant
 
 >   **Important avant de lancer :**
 > 
